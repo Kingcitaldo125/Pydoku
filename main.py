@@ -2,6 +2,8 @@ import pygame
 
 from random import randrange
 from time import sleep
+from fontcontroller import FontController
+from rendertext import RenderText
 
 class Cell:
 	def __init__(self,x,y,width,winx,winy):
@@ -10,14 +12,29 @@ class Cell:
 		self.width = width
 		self.color = "black"
 		self.clicked = False
+		self.value = None
+		self.font_controller = FontController()
+		self.valuetext = RenderText(self.font_controller, "black", "white")
+		self.valuetext.update_x(self.x + self.width // 2)
+		self.valuetext.update_y(self.y + self.width // 2)
 
 	def __str__(self):
 		return str(self.x) + "," + str(self.y)
+
+	def render(self,screen):
+		wid = self.width
+		not_filled = 1 if not self.clicked else 0
+		pygame.draw.rect(screen, self.color, (self.x,self.y,wid,wid), not_filled)
+
+		if self.value is not None:
+			self.valuetext.update_text(str(self.value))
+			self.valuetext.draw(screen)
 
 class Grid:
 	def __init__(self):
 		self.cells = []
 		self.cell_size = 0
+		self.clicked_cell = None
 
 	def init(self,winx,winy):
 		self.cells = []
@@ -25,7 +42,6 @@ class Grid:
 		x = 0
 		y = 0
 		self.cell_size = ((winx + winy) // 2) // 9
-		print("cell_size",self.cell_size)
 		for j in range(9):
 			row = []
 
@@ -38,15 +54,12 @@ class Grid:
 			y += self.cell_size
 
 	def render(self,surface,winx,winy):
-		wid = self.cell_size
 		x = 0
 		y = 0
 		ctr = 0
 		for row in self.cells:
 			for cell in row:
-				#print("cell",cell.x,cell.y,wid)
-				not_filled = 1 if not cell.clicked else 0
-				pygame.draw.rect(surface, cell.color, (cell.x,cell.y,wid,wid), not_filled)
+				cell.render(surface)
 
 			x += self.cell_size * 3
 			if ctr == 3:
@@ -72,10 +85,16 @@ def main(winx=900,winy=900):
 				mx,my = e.pos
 				xi = mx//grid.cell_size
 				yi = my//grid.cell_size
-				print("cell indices",xi,yi)
 				cell = grid.cells[yi][xi]
-				cell.clicked = True
-				cell.color = tuple([randrange(0,255) for i in range(3)])
+				if not cell.value and e.button == 1:
+					cell.value = 1
+				elif cell.value:
+					if e.button == 1 and cell.value < 9:
+						cell.value += 1
+					elif e.button == 3:
+						cell.value = max(0,cell.value - 1)
+						if cell.value == 0:
+							cell.value = None
 			if e.type == pygame.QUIT:
 				done = True
 				break
