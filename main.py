@@ -1,6 +1,6 @@
 import pygame
 
-from random import randrange
+from random import randrange, uniform
 from time import sleep
 from fontcontroller import FontController
 from rendertext import RenderText
@@ -53,6 +53,96 @@ class Grid:
 			x = 0
 			y += self.cell_size
 
+	def part_valid(self):
+		# Rows
+		xset = set([])
+		for row in self.cells:
+			for cell in row:
+				if not cell.value:
+					continue
+				if cell.value in xset:
+					cell.value = None
+					return False
+				xset.add(cell.value)
+
+		# Columns
+		for row_id in range(9):
+			xset = set([])
+			for col_id in range(9):
+				cell = self.cells[col_id][row_id]
+				if not cell.value:
+					continue
+				if cell.value in xset:
+					cell.value = None
+					return False
+				xset.add(cell.value)
+
+		# Sections
+		for ysection in range(3):
+			for xsection in range(3):
+				xs = xsection
+				ys = ysection
+				xset = set([])
+				for col_id in range(3):
+					for row_id in range(3):
+						cell = self.cells[col_id + 3 * ys][row_id + 3 * xs]
+
+						if not cell.value:
+							continue
+
+						if cell.value in xset:
+							return False
+
+						xset.add(cell.value)
+
+		return True
+
+	def validate_final(self):
+		# total sum for any row or column
+		xsum = 45
+
+		# Add up the rows
+		for row in self.cells:
+			row_tot = 0
+			for cell in row:
+				if not cell.value:
+					return False
+				row_tot += cell.value
+
+			if row_tot != xsum:
+				return False
+
+		# Add up the columns
+		for row_id in range(9):
+			ctot = 0
+			for col_id in range(9):
+				cell = self.cells[col_id][row_id]
+				if not cell.value:
+					return False
+				ctot += cell.value
+			if ctot != 45:
+				return False
+
+		# Add up the sections
+		for ysection in range(3):
+			for xsection in range(3):
+				section_sum = 0
+				xs = xsection
+				ys = ysection
+				for col_id in range(3):
+					for row_id in range(3):
+						cell = self.cells[col_id + 3 * ys][row_id + 3 * xs]
+
+						if not cell.value:
+							return False
+
+						section_sum += cell.value
+
+				if section_sum != 45:
+					return False
+
+		return True
+
 	def render(self,surface,winx,winy):
 		x = 0
 		y = 0
@@ -71,12 +161,41 @@ class Grid:
 			ctr += 1
 
 def main(winx=900,winy=900):
+	diff = 999
+	while diff < 0 or diff > 3:
+		print("Select a difficulty: 1 (easy), 2 (medium), 3 (hard)")
+		diff = int(input(''))
+		if diff < 0 or diff > 3:
+			print(f"Not a valid difficulty: {diff}")
+
 	pygame.display.init()
 	screen = pygame.display.set_mode((winx,winy))
 
 	grid = Grid()
-	grid.init(winx,winy)
+	font_controller = FontController()
 
+	prepop_grid_portion = 1.0
+	if diff == 1:
+		prepop_grid_portion = 1.0
+	elif diff == 2:
+		prepop_grid_portion = 0.25
+	elif diff == 3:
+		prepop_grid_portion = 0.1
+
+	grid.init(winx,winy)
+	for row in grid.cells:
+		for cell in row:
+			# Assign grid values based on difficulty
+			xv = uniform(0,1)
+			if xv <= prepop_grid_portion:
+				cell.value = randrange(1,10)
+
+	res = grid.part_valid()
+	# Whittle down the cells with values until there's a valid board
+	while not res:
+		res = grid.part_valid()
+
+	# Start the game
 	done = False
 	while not done:
 		events = pygame.event.get()
