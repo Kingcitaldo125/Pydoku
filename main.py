@@ -1,6 +1,8 @@
+import os
 import pygame
 
-from random import randrange, uniform
+from json import loads
+from random import choice, randrange, uniform
 from time import sleep
 
 from fontcontroller import FontController
@@ -26,6 +28,45 @@ def flash_cell_color(screen,winx,winy,grid,cell,color,times=9):
 		sleep(0.15)
 		x = not x
 
+def initialize_grid(winx, winy, pop_perc):
+	grid = Grid()
+	grid.init(winx,winy)
+	total_cells = 81
+	perc = total_cells - int(total_cells * pop_perc)
+
+	# Select a random completed board to sample valid values from
+	board_files = []
+	datadir = './data'
+	for path,dir,files in os.walk(datadir):
+		board_files = files
+		break
+
+	file_choice = os.path.join(datadir,choice(board_files))
+	board_data = None
+	with open(file_choice) as f:
+		board_data = loads(f.read())
+
+	# Set the board cell values based on the values present in the chosen file
+	bx = 0
+	by = 0
+	for row in grid.cells:
+		bx = 0
+		for cell in row:
+			cell.value = board_data[by][bx]
+			bx += 1
+		by += 1
+
+	# Whittle down the cells based on difficulty
+	for i in range(perc):
+		xcell = grid.cells[randrange(0,9)][randrange(0,9)]
+		while xcell.value is None:
+			xcell = grid.cells[randrange(0,9)][randrange(0,9)]
+		xcell.value = None
+
+	# Set the initially set cells
+	grid.set_init()
+	return grid
+
 def main(winx=900,winy=900):
 	diff = 999
 	while diff < 0 or diff > 3:
@@ -37,7 +78,6 @@ def main(winx=900,winy=900):
 	pygame.display.init()
 	screen = pygame.display.set_mode((winx,winy))
 
-	grid = Grid()
 	font_controller = FontController()
 	solver = Solver()
 
@@ -49,44 +89,7 @@ def main(winx=900,winy=900):
 	elif diff == 3:
 		prepop_grid_portion = 0.1
 
-	grid.init(winx,winy)
-	for row in grid.cells:
-		for cell in row:
-			# Assign grid values based on difficulty
-			xv = uniform(0,1)
-			if xv <= prepop_grid_portion:
-				cell.value = randrange(1,10)
-
-	res = grid.part_valid()
-	# Whittle down the cells with values until there's a valid board
-	while not res:
-		res = grid.part_valid()
-
-	# Set the initially set cells
-	grid.set_init()
-
-	'''
-	popcells = [
-	[2,8,1,4,5,9,6,3,7],
-	[5,3,4,7,6,1,2,8,9],
-	[9,7,6,8,3,2,1,4,5],
-	[1,2,3,5,4,7,9,6,8],
-	[7,6,9,3,1,8,4,5,2],
-	[8,4,5,9,2,6,3,7,1],
-	[6,5,7,2,9,4,8,1,3],
-	[4,9,8,1,7,3,5,2,6],
-	[None, None, None, None, None, None, None, None, None]
-	]
-
-	ictr = 0
-	jctr = 0
-	for row in grid.cells:
-		jctr = 0
-		for cell in row:
-			cell.value = popcells[ictr][jctr]
-			jctr += 1
-		ictr += 1
-	'''
+	grid = initialize_grid(winx, winy, prepop_grid_portion)
 
 	# Start the game
 	done = False
