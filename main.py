@@ -9,6 +9,23 @@ from rendertext import RenderText
 from grid import Cell,Grid
 from solver import Solver
 
+def flash_cell_color(screen,winx,winy,grid,cell,color,times=9):
+	x = False
+	screen.fill("white")
+	grid.render(screen,winx,winy)
+	for i in range(times):
+		cell_bounds = (cell.x,cell.y,cell.width,cell.width)
+		col = cell.color if x else color
+		pygame.draw.rect(screen, col, cell_bounds, 1)
+
+		if cell.value is not None:
+			cell.valuetext.update_text(str(cell.value))
+			cell.valuetext.draw(screen)
+
+		pygame.display.flip()
+		sleep(0.15)
+		x = not x
+
 def main(winx=900,winy=900):
 	diff = 999
 	while diff < 0 or diff > 3:
@@ -24,9 +41,9 @@ def main(winx=900,winy=900):
 	font_controller = FontController()
 	solver = Solver()
 
-	prepop_grid_portion = 1.0
+	prepop_grid_portion = 0.8
 	if diff == 1:
-		prepop_grid_portion = 1.0
+		prepop_grid_portion = 0.8
 	elif diff == 2:
 		prepop_grid_portion = 0.25
 	elif diff == 3:
@@ -45,6 +62,32 @@ def main(winx=900,winy=900):
 	while not res:
 		res = grid.part_valid()
 
+	# Set the initially set cells
+	grid.set_init()
+
+	'''
+	popcells = [
+	[2,8,1,4,5,9,6,3,7],
+	[5,3,4,7,6,1,2,8,9],
+	[9,7,6,8,3,2,1,4,5],
+	[1,2,3,5,4,7,9,6,8],
+	[7,6,9,3,1,8,4,5,2],
+	[8,4,5,9,2,6,3,7,1],
+	[6,5,7,2,9,4,8,1,3],
+	[4,9,8,1,7,3,5,2,6],
+	[None, None, None, None, None, None, None, None, None]
+	]
+
+	ictr = 0
+	jctr = 0
+	for row in grid.cells:
+		jctr = 0
+		for cell in row:
+			cell.value = popcells[ictr][jctr]
+			jctr += 1
+		ictr += 1
+	'''
+
 	# Start the game
 	done = False
 	valid = False
@@ -56,6 +99,12 @@ def main(winx=900,winy=900):
 				xi = mx//grid.cell_size
 				yi = my//grid.cell_size
 				cell = grid.cells[yi][xi]
+
+				# If this was one of the initially populated cells, don't process it
+				if grid.is_init_cell(cell):
+					flash_cell_color(screen,winx,winy,grid,cell,"red")
+					continue
+
 				if not cell.value and e.button == 1:
 					cell.value = 1
 				elif cell.value:
@@ -71,10 +120,10 @@ def main(winx=900,winy=900):
 				if valid:
 					done = True
 					break
-			if e.type == pygame.QUIT:
+			elif e.type == pygame.QUIT:
 				done = True
 				break
-			if e.type == pygame.KEYDOWN:
+			elif e.type == pygame.KEYDOWN:
 				if e.key == pygame.K_ESCAPE:
 					done = True
 					break
@@ -88,35 +137,38 @@ def main(winx=900,winy=900):
 		sleep(0.25)
 
 	if valid:
-		x = False
 		print("You Win!")
-		for i in range(9):
-			screen.fill("white")
 
+		# Flashing green to signal a win condition
+		screen.fill("white")
+		grid.render(screen,winx,winy)
+		x = False
+		for i in range(9):
 			for row in grid.cells:
 				for cell in row:
-					cell_bounds = (cell.x,cell.y,cell.width,cell.width)
+					cell_bounds = (cell.x, cell.y, cell.width, cell.width)
 					col = cell.color if x else "green"
 					pygame.draw.rect(screen, col, cell_bounds, 1)
 
-					if self.value is not None:
-						self.valuetext.update_text(str(self.value))
-						self.valuetext.draw(screen)
+					if cell.value is not None:
+						cell.valuetext.update_text(str(cell.value))
+						cell.valuetext.draw(screen)
 
 			pygame.display.flip()
 			sleep(0.5)
 			x = not x
 
-	done = False
-	while not done:
-		for e in events:
-			if e.type == pygame.QUIT:
-				done = True
-				break
-			if e.type == pygame.KEYDOWN:
-				if e.key == pygame.K_ESCAPE:
+		done = False
+		while not done:
+			events = pygame.event.get()
+			for e in events:
+				if e.type == pygame.QUIT:
 					done = True
 					break
+				if e.type == pygame.KEYDOWN:
+					if e.key == pygame.K_ESCAPE:
+						done = True
+						break
 
 	pygame.display.quit()
 

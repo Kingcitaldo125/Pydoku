@@ -31,8 +31,19 @@ class Cell:
 class Grid:
 	def __init__(self):
 		self.cells = []
+		self.initial_cells = set([])
 		self.cell_size = 0
 		self.clicked_cell = None
+
+	def is_init_cell(self,cell):
+		return cell in self.initial_cells
+
+	def set_init(self):
+		for row in self.cells:
+			for cell in row:
+				if cell.value is None:
+					continue
+				self.initial_cells.add(cell)
 
 	def init(self,winx,winy):
 		self.cells = []

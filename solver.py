@@ -3,37 +3,42 @@ class Solver:
 		pass
 
 	def validate_final(self,board):
-		# total sum for any row or column
-		xsum = 45
-
 		# Add up the rows
+		ctr = 1
 		for row in board.cells:
+			xset = set([])
 			row_tot = 0
 			for cell in row:
 				if not cell.value:
 					return False
-				row_tot += cell.value
-
-			if row_tot != xsum:
-				return False
+				if cell.value in xset:
+					print("row",ctr,cell.value,"in xset")
+					return False
+				xset.add(cell.value)
+			ctr += 1
 
 		# Add up the columns
+		ctr = 1
 		for row_id in range(9):
-			ctot = 0
+			xset = set([])
 			for col_id in range(9):
 				cell = board.cells[col_id][row_id]
 				if not cell.value:
 					return False
-				ctot += cell.value
-			if ctot != 45:
-				return False
+				if cell.value in xset:
+					print("col",ctr,cell.value,"in xset")
+					return False
+				xset.add(cell.value)
+			ctr += 1
 
 		# Add up the sections
+		xctr = 1
+		yctr = 1
 		for ysection in range(3):
 			for xsection in range(3):
-				section_sum = 0
 				xs = xsection
 				ys = ysection
+				xset = set([])
 				for col_id in range(3):
 					for row_id in range(3):
 						cell = board.cells[col_id + 3 * ys][row_id + 3 * xs]
@@ -41,9 +46,12 @@ class Solver:
 						if not cell.value:
 							return False
 
-						section_sum += cell.value
+						if cell.value in xset:
+							print(cell.value,xctr,",",yctr,"in xset")
+							return False
 
-				if section_sum != 45:
-					return False
+						xset.add(cell.value)
+				xctr += 1
+			yctr += 1
 
 		return True
