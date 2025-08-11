@@ -14,9 +14,12 @@ Start the game by running Python against the main file:
 python main.py
 ```
 
-Use the left and right mouse buttons to interact with the cells.
-The left mouse button will increment a cell's value, up to and including `9`.
-The right mouse button will decrement a cell's value, down to and including `1`.
+After the game starts, you will be asked to enter in a difficulty setting.
+Enter in your chosen difficulty setting in the terminal window you used to start the game.
+
+To play, use the left and right mouse buttons to interact with the cells.
+The left mouse button will **increment** a cell's value, up to and including `9`.
+The right mouse button will **decrement** a cell's value, down to and including `1`.
 
 If a cell's value is `1`, and a right-click were selected on it, this will clear the cell.
 
